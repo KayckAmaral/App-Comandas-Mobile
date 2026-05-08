@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, View, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -17,7 +17,7 @@ import EditarComandaScreen from '../screens/EditarComandaScreen';
 import EstoqueScreen from '../screens/EstoqueScreen';
 
 const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab = createMaterialTopTabNavigator();
 
 // Stack de Autenticação (Login/Registro)
 function AuthStack() {
@@ -110,30 +110,89 @@ function ComandasStack() {
   );
 }
 
-// Tab Navigator Principal (após login)
-function AppTabs() {
+// TabBar customizado (idêntico visualmente ao bottom-tabs antigo).
+// Usado pelo material-top-tabs no rodapé, com swipe nativo via pager-view.
+function CustomTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
   return (
+    <View
+      style={[
+        tabBarStyles.bar,
+        { paddingBottom: insets.bottom, height: 60 + insets.bottom },
+      ]}
+    >
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const label = options.title ?? route.name;
+        const isFocused = state.index === index;
+        const color = isFocused ? '#E57373' : '#999';
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            onPress={onPress}
+            style={tabBarStyles.item}
+            activeOpacity={0.7}
+          >
+            {options.tabBarIcon &&
+              options.tabBarIcon({ focused: isFocused, color, size: 28 })}
+            <Text style={[tabBarStyles.label, { color }]}>{label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+const tabBarStyles = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 6,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  item: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+});
+
+// Tab Navigator Principal (após login) — material-top-tabs no rodapé
+// dá swipe horizontal entre as 3 abas em qualquer ponto da tela.
+function AppTabs() {
+  return (
     <Tab.Navigator
+      tabBarPosition="bottom"
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: '#E57373',
-        tabBarInactiveTintColor: '#999',
-        tabBarStyle: {
-          height: 60 + insets.bottom,
-          paddingBottom: 8 + insets.bottom,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-        headerStyle: {
-          backgroundColor: '#E57373',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        swipeEnabled: true,
+        animationEnabled: true,
+        lazy: false,
       }}
     >
       <Tab.Screen
@@ -141,10 +200,7 @@ function AppTabs() {
         component={DashboardScreen}
         options={{
           title: 'Início',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="🏠" color={color} size={size} />
-          ),
-          headerTitle: 'FastComanda',
+          tabBarIcon: ({ size }) => <TabIcon name="🏠" size={size} />,
         }}
       />
       <Tab.Screen
@@ -152,10 +208,7 @@ function AppTabs() {
         component={ComandasStack}
         options={{
           title: 'Comandas',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="📋" color={color} size={size} />
-          ),
-          headerShown: false,
+          tabBarIcon: ({ size }) => <TabIcon name="📋" size={size} />,
         }}
       />
       <Tab.Screen
@@ -163,10 +216,7 @@ function AppTabs() {
         component={EstoqueScreen}
         options={{
           title: 'Estoque',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="📦" color={color} size={size} />
-          ),
-          headerTitle: 'Gerenciar Estoque',
+          tabBarIcon: ({ size }) => <TabIcon name="📦" size={size} />,
         }}
       />
     </Tab.Navigator>

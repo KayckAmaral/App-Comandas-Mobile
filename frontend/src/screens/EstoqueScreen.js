@@ -14,9 +14,11 @@ import {
   Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 
 export default function EstoqueScreen() {
+  const insets = useSafeAreaInsets();
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -153,7 +155,7 @@ export default function EstoqueScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Gerenciar Estoque</Text>
         <Text style={styles.headerSubtitle}>{produtos.length} produtos</Text>
       </View>

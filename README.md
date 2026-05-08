@@ -15,6 +15,7 @@ App mobile para gerenciamento de comandas em restaurantes e lanchonetes — subs
 - **Comandas**: criar, listar, ver detalhes, editar (cliente, itens, quantidades, observações), finalizar.
 - **Estoque**: lista de produtos com indicador visual (OK / baixo / sem estoque) e atualização rápida da quantidade.
 - **Dashboard**: total de comandas, faturamento e produtos mais vendidos do dia.
+- **Navegação por swipe**: arrastar lateralmente em qualquer ponto da tela alterna entre Início, Comandas e Estoque (além dos ícones do menu inferior).
 - Layout responsivo para iPhone (notch + barra de gestos) e Android, com tema vermelho pastel.
 
 ## Estrutura
