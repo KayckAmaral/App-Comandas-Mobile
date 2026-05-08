@@ -6,14 +6,14 @@ exports.listarComandas = async (req, res) => {
     const { status, data } = req.query;
     
     let query = `
-      SELECT 
+      SELECT
         c.*,
         cl.nome as cliente_nome,
         u.nome as usuario_nome
       FROM comandas c
       LEFT JOIN clientes cl ON c.cliente_id = cl.id
       LEFT JOIN usuarios u ON c.usuario_id = u.id
-      WHERE 1=1
+      WHERE c.deleted_at IS NULL
     `;
     
     const params = [];
@@ -51,9 +51,9 @@ exports.buscarComanda = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Buscar comanda
+    // Buscar comanda (apenas as não apagadas)
     const [comandas] = await db.query(`
-      SELECT 
+      SELECT
         c.*,
         cl.nome as cliente_nome,
         cl.telefone as cliente_telefone,
@@ -61,7 +61,7 @@ exports.buscarComanda = async (req, res) => {
       FROM comandas c
       LEFT JOIN clientes cl ON c.cliente_id = cl.id
       LEFT JOIN usuarios u ON c.usuario_id = u.id
-      WHERE c.id = ?
+      WHERE c.id = ? AND c.deleted_at IS NULL
     `, [id]);
 
     if (comandas.length === 0) {
@@ -565,6 +565,42 @@ exports.finalizarComanda = async (req, res) => {
   }
 };
 
+// Apagar (soft delete) comanda — apenas comandas fechadas/canceladas
+exports.apagarComanda = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [comandas] = await db.query(
+      'SELECT id, status FROM comandas WHERE id = ? AND deleted_at IS NULL',
+      [id]
+    );
+
+    if (comandas.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comanda não encontrada',
+      });
+    }
+
+    if (comandas[0].status === 'aberta') {
+      return res.status(400).json({
+        success: false,
+        message: 'Comandas abertas não podem ser apagadas. Finalize ou cancele antes.',
+      });
+    }
+
+    await db.query(
+      'UPDATE comandas SET deleted_at = NOW() WHERE id = ?',
+      [id]
+    );
+
+    res.json({ success: true, message: 'Comanda apagada com sucesso' });
+  } catch (error) {
+    console.error('Erro ao apagar comanda:', error);
+    res.status(500).json({ success: false, message: 'Erro ao apagar comanda' });
+  }
+};
+
 // Estatísticas do dia (Dashboard)
 exports.estatisticasDia = async (req, res) => {
   try {
@@ -572,36 +608,36 @@ exports.estatisticasDia = async (req, res) => {
 
     // Total de comandas do dia
     const [totalComandas] = await db.query(
-      'SELECT COUNT(*) as total FROM comandas WHERE DATE(data_abertura) = ?',
+      'SELECT COUNT(*) as total FROM comandas WHERE DATE(data_abertura) = ? AND deleted_at IS NULL',
       [hoje]
     );
 
     // Comandas por status
     const [porStatus] = await db.query(
-      `SELECT 
+      `SELECT
         status,
         COUNT(*) as total
-      FROM comandas 
-      WHERE DATE(data_abertura) = ?
+      FROM comandas
+      WHERE DATE(data_abertura) = ? AND deleted_at IS NULL
       GROUP BY status`,
       [hoje]
     );
 
     // Valor total do dia
     const [valorTotal] = await db.query(
-      'SELECT SUM(valor_total) as total FROM comandas WHERE DATE(data_abertura) = ? AND status = "fechada"',
+      'SELECT SUM(valor_total) as total FROM comandas WHERE DATE(data_abertura) = ? AND status = "fechada" AND deleted_at IS NULL',
       [hoje]
     );
 
     // Produtos mais vendidos do dia
     const [topProdutos] = await db.query(
-      `SELECT 
+      `SELECT
         p.nome,
         SUM(ci.quantidade) as total_vendido
       FROM comandas_itens ci
       JOIN comandas c ON ci.comanda_id = c.id
       JOIN produtos p ON ci.produto_id = p.id
-      WHERE DATE(c.data_abertura) = ?
+      WHERE DATE(c.data_abertura) = ? AND c.deleted_at IS NULL
       GROUP BY p.id, p.nome
       ORDER BY total_vendido DESC
       LIMIT 5`,

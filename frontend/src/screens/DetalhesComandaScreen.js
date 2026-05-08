@@ -16,6 +16,7 @@ export default function DetalhesComandaScreen({ route, navigation }) {
   const [comanda, setComanda] = useState(null);
   const [loading, setLoading] = useState(true);
   const [finalizando, setFinalizando] = useState(false);
+  const [apagando, setApagando] = useState(false);
 
   // Recarrega ao voltar da tela de edição
   useFocusEffect(
@@ -61,6 +62,37 @@ export default function DetalhesComandaScreen({ route, navigation }) {
               );
             } finally {
               setFinalizando(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  function apagarComanda() {
+    Alert.alert(
+      'Apagar Comanda',
+      'A comanda sera removida da lista. O historico continua salvo no banco. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Apagar',
+          style: 'destructive',
+          onPress: async () => {
+            setApagando(true);
+            try {
+              await api.delete(`/comandas/${comandaId}`);
+              Alert.alert('Sucesso', 'Comanda apagada com sucesso!', [
+                { text: 'OK', onPress: () => navigation.goBack() },
+              ]);
+            } catch (error) {
+              console.error('Erro ao apagar comanda:', error);
+              Alert.alert(
+                'Erro',
+                error.response?.data?.message || 'Não foi possível apagar a comanda'
+              );
+            } finally {
+              setApagando(false);
             }
           },
         },
@@ -226,6 +258,21 @@ export default function DetalhesComandaScreen({ route, navigation }) {
             )}
           </TouchableOpacity>
         </>
+      )}
+
+      {/* Apagar (soft delete) — só para comandas fechadas ou canceladas */}
+      {comanda.status !== 'aberta' && (
+        <TouchableOpacity
+          style={[styles.apagarButton, apagando && styles.buttonDisabled]}
+          onPress={apagarComanda}
+          disabled={apagando}
+        >
+          {apagando ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.apagarButtonText}>🗑️ Apagar Comanda</Text>
+          )}
+        </TouchableOpacity>
       )}
 
       <View style={{ height: 40 }} />
@@ -399,6 +446,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#9E9E9E',
   },
   finalizarButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  apagarButton: {
+    backgroundColor: '#f44336',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  apagarButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',

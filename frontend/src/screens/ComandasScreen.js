@@ -43,6 +43,37 @@ export default function ComandasScreen({ navigation }) {
     loadComandas();
   }
 
+  function confirmarApagar(item) {
+    const cliente = item.cliente_nome ? ` (${item.cliente_nome})` : '';
+    const total = `R$ ${Number(item.valor_total).toFixed(2)}`;
+    Alert.alert(
+      'Apagar Comanda',
+      `Deseja apagar a Comanda #${item.id}${cliente} no valor de ${total}?\n\nEla sera removida da lista, mas o registro permanece salvo no banco para historico.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Apagar',
+          style: 'destructive',
+          onPress: () => apagarComanda(item.id),
+        },
+      ]
+    );
+  }
+
+  async function apagarComanda(id) {
+    try {
+      await api.delete(`/comandas/${id}`);
+      // Remove localmente sem precisar recarregar tudo
+      setComandas((prev) => prev.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error('Erro ao apagar comanda:', error);
+      Alert.alert(
+        'Erro',
+        error.response?.data?.message || 'Não foi possível apagar a comanda'
+      );
+    }
+  }
+
   function getStatusColor(status) {
     switch (status) {
       case 'aberta':
@@ -103,7 +134,18 @@ export default function ComandasScreen({ navigation }) {
           </Text>
         </View>
 
-        <Text style={styles.dateText}>{formatDate(item.data_abertura)}</Text>
+        <View style={styles.cardFooter}>
+          <Text style={styles.dateText}>{formatDate(item.data_abertura)}</Text>
+          {item.status !== 'aberta' && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => confirmarApagar(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.deleteButtonText}>🗑️ Apagar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </TouchableOpacity>
     );
   }
@@ -244,10 +286,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#E57373',
   },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   dateText: {
     fontSize: 12,
     color: '#999',
-    marginTop: 8,
+  },
+  deleteButton: {
+    backgroundColor: '#f44336',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   emptyContainer: {
     flex: 1,

@@ -33,4 +33,7 @@ router.delete('/:id/itens/:itemId', comandaController.removerItem);
 // PATCH /api/comandas/:id/finalizar - Finalizar/fechar comanda
 router.patch('/:id/finalizar', comandaController.finalizarComanda);
 
+// DELETE /api/comandas/:id - Apagar (soft delete) comanda fechada/cancelada
+router.delete('/:id', comandaController.apagarComanda);
+
 module.exports = router;
