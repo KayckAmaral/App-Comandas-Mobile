@@ -45,7 +45,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="light" backgroundColor="#E57373" />
+        <StatusBar style="dark" backgroundColor="#fff" translucent={false} />
         <Routes />
       </AuthProvider>
     </SafeAreaProvider>
