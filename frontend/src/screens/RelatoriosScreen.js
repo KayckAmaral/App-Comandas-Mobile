@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, TextInput,
+  ActivityIndicator, Alert, Modal, Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 
@@ -13,18 +14,12 @@ const PERIODOS = [
   { key: 'custom', label: 'Personalizado' },
 ];
 
-function parseDate(str) {
-  if (!str || str.length !== 10) return null;
-  const partes = str.split('/');
-  if (partes.length !== 3) return null;
-  const [d, m, y] = partes;
-  if (y.length !== 4) return null;
-  const iso = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-  return isNaN(new Date(iso).getTime()) ? null : iso;
-}
-
 function fmtMoeda(v) {
   return `R$ ${Number(v || 0).toFixed(2).replace('.', ',')}`;
+}
+
+function fmtDataBtn(date) {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function fmtDataExib(iso) {
@@ -33,11 +28,64 @@ function fmtDataExib(iso) {
   return `${d}/${m}/${y}`;
 }
 
+function DatePickerModal({ visible, value, onChange, onClose, minimumDate, maximumDate }) {
+  const [tempDate, setTempDate] = useState(value);
+
+  if (!visible) return null;
+
+  if (Platform.OS === 'android') {
+    return (
+      <DateTimePicker
+        value={value}
+        mode="date"
+        display="default"
+        onChange={(event, date) => {
+          onClose();
+          if (event.type !== 'dismissed' && date) onChange(date);
+        }}
+        minimumDate={minimumDate}
+        maximumDate={maximumDate}
+      />
+    );
+  }
+
+  return (
+    <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
+      <View style={pickerStyles.overlay}>
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+        <View style={pickerStyles.sheet}>
+          <View style={pickerStyles.toolbar}>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={pickerStyles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { onChange(tempDate); onClose(); }}>
+              <Text style={pickerStyles.confirmText}>Confirmar</Text>
+            </TouchableOpacity>
+          </View>
+          <DateTimePicker
+            value={tempDate}
+            mode="date"
+            display="spinner"
+            onChange={(_, date) => { if (date) setTempDate(date); }}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
+            locale="pt-BR"
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const hoje = new Date();
+
 export default function RelatoriosScreen() {
   const insets = useSafeAreaInsets();
   const [periodo, setPeriodo] = useState('mes');
-  const [customInicio, setCustomInicio] = useState('');
-  const [customFim, setCustomFim] = useState('');
+  const [dateInicio, setDateInicio] = useState(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  const [dateFim, setDateFim] = useState(hoje);
+  const [showPickerInicio, setShowPickerInicio] = useState(false);
+  const [showPickerFim, setShowPickerFim] = useState(false);
   const [dados, setDados] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,25 +94,17 @@ export default function RelatoriosScreen() {
   }, [periodo]);
 
   function getDatas() {
-    const hoje = new Date();
     const fmt = (d) => d.toISOString().split('T')[0];
-
     if (periodo === 'hoje') return { inicio: fmt(hoje), fim: fmt(hoje) };
     if (periodo === '7dias') {
-      const s = new Date(hoje);
-      s.setDate(hoje.getDate() - 6);
+      const s = new Date(hoje); s.setDate(hoje.getDate() - 6);
       return { inicio: fmt(s), fim: fmt(hoje) };
     }
     if (periodo === 'mes') {
       return { inicio: fmt(new Date(hoje.getFullYear(), hoje.getMonth(), 1)), fim: fmt(hoje) };
     }
     if (periodo === 'custom') {
-      const inicio = parseDate(customInicio);
-      const fim = parseDate(customFim);
-      if (!inicio) { Alert.alert('Atenção', 'Data inicial inválida. Use DD/MM/AAAA'); return null; }
-      if (!fim) { Alert.alert('Atenção', 'Data final inválida. Use DD/MM/AAAA'); return null; }
-      if (inicio > fim) { Alert.alert('Atenção', 'Data inicial deve ser anterior à data final'); return null; }
-      return { inicio, fim };
+      return { inicio: fmt(dateInicio), fim: fmt(dateFim) };
     }
     return null;
   }
@@ -117,25 +157,15 @@ export default function RelatoriosScreen() {
           <View style={styles.customRow}>
             <View style={styles.customField}>
               <Text style={styles.customLabel}>De</Text>
-              <TextInput
-                style={styles.customInput}
-                placeholder="DD/MM/AAAA"
-                value={customInicio}
-                onChangeText={setCustomInicio}
-                keyboardType="numeric"
-                maxLength={10}
-              />
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowPickerInicio(true)}>
+                <Text style={styles.dateBtnText}>📅 {fmtDataBtn(dateInicio)}</Text>
+              </TouchableOpacity>
             </View>
             <View style={styles.customField}>
               <Text style={styles.customLabel}>Até</Text>
-              <TextInput
-                style={styles.customInput}
-                placeholder="DD/MM/AAAA"
-                value={customFim}
-                onChangeText={setCustomFim}
-                keyboardType="numeric"
-                maxLength={10}
-              />
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowPickerFim(true)}>
+                <Text style={styles.dateBtnText}>📅 {fmtDataBtn(dateFim)}</Text>
+              </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.buscarBtn} onPress={buscarRelatorio}>
               <Text style={styles.buscarBtnText}>Buscar</Text>
@@ -150,13 +180,11 @@ export default function RelatoriosScreen() {
         </View>
       ) : dados ? (
         <>
-          {/* Período exibido */}
           <Text style={styles.periodoLabel}>
             {fmtDataExib(dados.periodo.inicio)}
             {dados.periodo.inicio !== dados.periodo.fim ? ` até ${fmtDataExib(dados.periodo.fim)}` : ''}
           </Text>
 
-          {/* Cards de resumo */}
           <View style={styles.resumoRow}>
             <View style={[styles.resumoCard, { borderTopColor: '#E53935' }]}>
               <Text style={styles.resumoValor}>{fmtMoeda(dados.resumo.faturamento)}</Text>
@@ -172,7 +200,6 @@ export default function RelatoriosScreen() {
             </View>
           </View>
 
-          {/* Status dos pedidos */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Pedidos no Período</Text>
             <View style={styles.statusRow}>
@@ -189,7 +216,6 @@ export default function RelatoriosScreen() {
             </View>
           </View>
 
-          {/* Top produtos */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Produtos Mais Vendidos</Text>
             {dados.top_produtos.length === 0 ? (
@@ -213,9 +239,38 @@ export default function RelatoriosScreen() {
       ) : null}
 
       <View style={{ height: 40 }} />
+
+      {/* Date Pickers */}
+      <DatePickerModal
+        visible={showPickerInicio}
+        value={dateInicio}
+        onChange={(date) => setDateInicio(date)}
+        onClose={() => setShowPickerInicio(false)}
+        maximumDate={dateFim}
+      />
+      <DatePickerModal
+        visible={showPickerFim}
+        value={dateFim}
+        onChange={(date) => setDateFim(date)}
+        onClose={() => setShowPickerFim(false)}
+        minimumDate={dateInicio}
+        maximumDate={new Date()}
+      />
     </ScrollView>
   );
 }
+
+const pickerStyles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  toolbar: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#eee',
+  },
+  cancelText: { fontSize: 16, color: '#666' },
+  confirmText: { fontSize: 16, color: '#E53935', fontWeight: 'bold' },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
@@ -235,21 +290,19 @@ const styles = StyleSheet.create({
   periodoChipTextoAtivo: { color: '#fff', fontWeight: '700' },
   customRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 16 },
   customField: { flex: 1 },
-  customLabel: { fontSize: 12, color: '#888', marginBottom: 4 },
-  customInput: {
+  customLabel: { fontSize: 12, color: '#888', marginBottom: 6 },
+  dateBtn: {
     backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#ddd',
-    borderRadius: 8, padding: 10, fontSize: 14,
+    borderRadius: 8, padding: 10,
   },
+  dateBtnText: { fontSize: 13, color: '#333', fontWeight: '500' },
   buscarBtn: {
     backgroundColor: '#E53935', paddingHorizontal: 14, paddingVertical: 10,
     borderRadius: 8, alignItems: 'center', justifyContent: 'center',
   },
   buscarBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   loadingContainer: { paddingVertical: 60, alignItems: 'center' },
-  periodoLabel: {
-    textAlign: 'center', fontSize: 13, color: '#888',
-    marginTop: 12, marginBottom: 4,
-  },
+  periodoLabel: { textAlign: 'center', fontSize: 13, color: '#888', marginTop: 12, marginBottom: 4 },
   resumoRow: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
   resumoCard: {
     flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14,
