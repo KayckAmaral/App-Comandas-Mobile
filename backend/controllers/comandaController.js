@@ -107,7 +107,7 @@ exports.criarComanda = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { cliente_id, tipo_venda, itens, observacoes } = req.body;
+    const { cliente_id, tipo_venda, itens, observacoes, mesa } = req.body;
     const usuario_id = req.userId;
 
     if (!itens || itens.length === 0) {
@@ -136,8 +136,8 @@ exports.criarComanda = async (req, res) => {
 
     // Criar comanda
     const [resultComanda] = await connection.query(
-      'INSERT INTO comandas (cliente_id, usuario_id, tipo_venda, observacoes) VALUES (?, ?, ?, ?)',
-      [cliente_id || null, usuario_id, tipo_venda || 'vista', observacoes || null]
+      'INSERT INTO comandas (cliente_id, usuario_id, tipo_venda, observacoes, mesa) VALUES (?, ?, ?, ?, ?)',
+      [cliente_id || null, usuario_id, tipo_venda || 'vista', observacoes || null, mesa || null]
     );
 
     const comanda_id = resultComanda.insertId;
@@ -314,7 +314,7 @@ exports.adicionarItem = async (req, res) => {
 exports.atualizarComanda = async (req, res) => {
   try {
     const { id } = req.params;
-    const { cliente_id, tipo_venda, observacoes } = req.body;
+    const { cliente_id, tipo_venda, observacoes, mesa } = req.body;
 
     // Verificar se comanda existe e está aberta
     const [comandas] = await db.query(
@@ -351,8 +351,8 @@ exports.atualizarComanda = async (req, res) => {
     }
 
     await db.query(
-      'UPDATE comandas SET cliente_id = ?, tipo_venda = ?, observacoes = ? WHERE id = ?',
-      [cliente_id || null, tipo_venda || 'vista', observacoes || null, id]
+      'UPDATE comandas SET cliente_id = ?, tipo_venda = ?, observacoes = ?, mesa = ? WHERE id = ?',
+      [cliente_id || null, tipo_venda || 'vista', observacoes || null, mesa || null, id]
     );
 
     res.json({ success: true, message: 'Comanda atualizada com sucesso' });
@@ -660,6 +660,57 @@ exports.estatisticasDia = async (req, res) => {
       success: false, 
       message: 'Erro ao buscar estatísticas' 
     });
+  }
+};
+
+// Cancelar comanda aberta (devolve itens ao estoque)
+exports.cancelarComanda = async (req, res) => {
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const { id } = req.params;
+
+    const [comandas] = await connection.query(
+      'SELECT id FROM comandas WHERE id = ? AND status = "aberta"',
+      [id]
+    );
+
+    if (comandas.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'Comanda não encontrada ou não está aberta',
+      });
+    }
+
+    const [itens] = await connection.query(
+      'SELECT produto_id, quantidade FROM comandas_itens WHERE comanda_id = ?',
+      [id]
+    );
+
+    for (const item of itens) {
+      await connection.query(
+        'UPDATE produtos SET quantidade_estoque = quantidade_estoque + ? WHERE id = ?',
+        [item.quantidade, item.produto_id]
+      );
+    }
+
+    await connection.query(
+      'UPDATE comandas SET status = "cancelada", data_fechamento = NOW() WHERE id = ?',
+      [id]
+    );
+
+    await connection.commit();
+
+    res.json({ success: true, message: 'Comanda cancelada com sucesso' });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Erro ao cancelar comanda:', error);
+    res.status(500).json({ success: false, message: 'Erro ao cancelar comanda' });
+  } finally {
+    connection.release();
   }
 };
 

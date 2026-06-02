@@ -8,15 +8,19 @@ exports.listarProdutos = async (req, res) => {
   try {
     const { ativo } = req.query;
     
-    let query = 'SELECT * FROM produtos';
+    let query = `
+      SELECT p.*, c.nome as categoria_nome
+      FROM produtos p
+      LEFT JOIN categorias c ON p.categoria_id = c.id
+    `;
     let params = [];
 
     if (ativo !== undefined) {
-      query += ' WHERE ativo = ?';
+      query += ' WHERE p.ativo = ?';
       params.push(ativo === 'true' ? 1 : 0);
     }
 
-    query += ' ORDER BY nome ASC';
+    query += ' ORDER BY c.nome ASC, p.nome ASC';
 
     const [produtos] = await db.query(query, params);
 

@@ -17,9 +17,20 @@ import {
 } from 'react-native';
 import api from '../services/api';
 
-function SelectField({ label, value, items, placeholder, onChange }) {
+function SelectField({ label, value, items, placeholder, onChange, searchable = false }) {
   const [open, setOpen] = useState(false);
+  const [busca, setBusca] = useState('');
   const selected = items.find((i) => String(i.value) === String(value));
+
+  function fechar() {
+    setOpen(false);
+    setBusca('');
+  }
+
+  const itensFiltrados =
+    searchable && busca.trim()
+      ? items.filter((i) => i.label.toLowerCase().includes(busca.toLowerCase()))
+      : items;
 
   return (
     <>
@@ -44,48 +55,183 @@ function SelectField({ label, value, items, placeholder, onChange }) {
         visible={open}
         transparent
         animationType="fade"
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={fechar}
       >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setOpen(false)}
-        >
-          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label}</Text>
-              <TouchableOpacity onPress={() => setOpen(false)}>
-                <Text style={styles.modalClose}>Fechar</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={items}
-              keyExtractor={(it) => String(it.value)}
-              renderItem={({ item }) => {
-                const isSelected = String(value) === String(item.value);
-                return (
-                  <TouchableOpacity
-                    style={[styles.option, isSelected && styles.optionSelected]}
-                    onPress={() => {
-                      onChange(item.value);
-                      setOpen(false);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextSelected,
-                      ]}
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={fechar}
+          />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{label}</Text>
+                <TouchableOpacity onPress={fechar}>
+                  <Text style={styles.modalClose}>Fechar</Text>
+                </TouchableOpacity>
+              </View>
+              {searchable && (
+                <View style={styles.modalSearchContainer}>
+                  <TextInput
+                    style={styles.modalSearchInput}
+                    placeholder="Buscar cliente..."
+                    value={busca}
+                    onChangeText={setBusca}
+                    clearButtonMode="while-editing"
+                    autoFocus
+                  />
+                </View>
+              )}
+              <FlatList
+                data={itensFiltrados}
+                keyExtractor={(it) => String(it.value)}
+                ListEmptyComponent={
+                  <Text style={styles.modalSemResultados}>Nenhum cliente encontrado</Text>
+                }
+                renderItem={({ item }) => {
+                  const isSelected = String(value) === String(item.value);
+                  return (
+                    <TouchableOpacity
+                      style={[styles.option, isSelected && styles.optionSelected]}
+                      onPress={() => {
+                        onChange(item.value);
+                        fechar();
+                      }}
                     >
-                      {item.label}
+                      <Text
+                        style={[
+                          styles.optionText,
+                          isSelected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                      {isSelected && <Text style={styles.optionCheck}>✓</Text>}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+function ProdutoPicker({ value, produtos, categorias, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [busca, setBusca] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+
+  const produtoSel = produtos.find((p) => String(p.id) === String(value));
+
+  function fechar() {
+    setOpen(false);
+    setBusca('');
+    setCategoriaFiltro('');
+  }
+
+  const produtosFiltrados = produtos.filter((p) => {
+    const matchBusca = !busca || p.nome.toLowerCase().includes(busca.toLowerCase());
+    const matchCat = !categoriaFiltro || String(p.categoria_id) === categoriaFiltro;
+    return matchBusca && matchCat;
+  });
+
+  return (
+    <>
+      <TouchableOpacity style={styles.selectButton} onPress={() => setOpen(true)} activeOpacity={0.7}>
+        <Text style={[styles.selectButtonText, !produtoSel && styles.selectButtonPlaceholder]} numberOfLines={1}>
+          {produtoSel
+            ? `${produtoSel.nome} — R$ ${Number(produtoSel.preco).toFixed(2)}`
+            : 'Selecione um produto'}
+        </Text>
+        <Text style={styles.selectButtonChevron}>▾</Text>
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={fechar}>
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={fechar} />
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Selecionar Produto</Text>
+                <TouchableOpacity onPress={fechar}>
+                  <Text style={styles.modalClose}>Fechar</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalSearchContainer}>
+                <TextInput
+                  style={styles.modalSearchInput}
+                  placeholder="Buscar produto..."
+                  value={busca}
+                  onChangeText={setBusca}
+                  clearButtonMode="while-editing"
+                  autoFocus
+                />
+              </View>
+              {categorias.length > 0 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.pickerCategorias}
+                  contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8 }}
+                >
+                  <TouchableOpacity
+                    style={[styles.pickerCategoriaChip, !categoriaFiltro && styles.pickerCategoriaChipAtivo]}
+                    onPress={() => setCategoriaFiltro('')}
+                  >
+                    <Text style={[styles.pickerCategoriaChipText, !categoriaFiltro && styles.pickerCategoriaChipTextoAtivo]}>
+                      Todas
                     </Text>
-                    {isSelected && <Text style={styles.optionCheck}>✓</Text>}
                   </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
-        </TouchableOpacity>
+                  {categorias.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[styles.pickerCategoriaChip, categoriaFiltro === String(cat.id) && styles.pickerCategoriaChipAtivo]}
+                      onPress={() => setCategoriaFiltro(String(cat.id))}
+                    >
+                      <Text style={[styles.pickerCategoriaChipText, categoriaFiltro === String(cat.id) && styles.pickerCategoriaChipTextoAtivo]}>
+                        {cat.nome}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+              <FlatList
+                data={produtosFiltrados}
+                keyExtractor={(p) => String(p.id)}
+                ListEmptyComponent={<Text style={styles.modalSemResultados}>Nenhum produto encontrado</Text>}
+                renderItem={({ item }) => {
+                  const isSelected = String(value) === String(item.id);
+                  const semEstoque = item.quantidade_estoque === 0;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.option, isSelected && styles.optionSelected, semEstoque && styles.optionDesabilitada]}
+                      onPress={() => { if (!semEstoque) { onChange(item.id.toString()); fechar(); } }}
+                      disabled={semEstoque}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.optionText, isSelected && styles.optionTextSelected, semEstoque && styles.optionTextDesabilitada]}>
+                          {item.nome}
+                        </Text>
+                        <Text style={styles.optionSubtext}>
+                          R$ {Number(item.preco).toFixed(2)} • Est: {item.quantidade_estoque}
+                          {item.categoria_nome ? ` • ${item.categoria_nome}` : ''}
+                        </Text>
+                      </View>
+                      {isSelected && !semEstoque && <Text style={styles.optionCheck}>✓</Text>}
+                      {semEstoque && <Text style={styles.pickerSemEstoqueTag}>Esgotado</Text>}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
     </>
   );
@@ -94,8 +240,10 @@ function SelectField({ label, value, items, placeholder, onChange }) {
 export default function NovaComandaScreen({ navigation }) {
   const [clientes, setClientes] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [clienteSelecionado, setClienteSelecionado] = useState('');
   const [tipoVenda, setTipoVenda] = useState('vista');
+  const [mesa, setMesa] = useState('');
   const [itens, setItens] = useState([]);
   const [produtoSelecionado, setProdutoSelecionado] = useState('');
   const [quantidade, setQuantidade] = useState('1');
@@ -109,13 +257,15 @@ export default function NovaComandaScreen({ navigation }) {
 
   async function loadData() {
     try {
-      const [clientesRes, produtosRes] = await Promise.all([
+      const [clientesRes, produtosRes, categoriasRes] = await Promise.all([
         api.get('/clientes'),
         api.get('/produtos?ativo=true'),
+        api.get('/categorias'),
       ]);
 
       setClientes(clientesRes.data.data);
       setProdutos(produtosRes.data.data);
+      setCategorias(categoriasRes.data.data);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados');
@@ -130,9 +280,9 @@ export default function NovaComandaScreen({ navigation }) {
       return;
     }
 
-    const qtd = parseInt(quantidade);
+    const qtd = parseInt(quantidade, 10);
     if (isNaN(qtd) || qtd < 1) {
-      Alert.alert('Atenção', 'Quantidade inválida');
+      Alert.alert('Atenção', 'Informe uma quantidade válida');
       return;
     }
 
@@ -190,12 +340,18 @@ export default function NovaComandaScreen({ navigation }) {
       return;
     }
 
+    if (!mesa.trim()) {
+      Alert.alert('Atenção', 'Informe a mesa, balcão ou tipo de atendimento');
+      return;
+    }
+
     setSaving(true);
 
     try {
       const payload = {
         cliente_id: clienteSelecionado || null,
         tipo_venda: tipoVenda,
+        mesa: mesa.trim() || null,
         observacoes: observacoes.trim() || null,
         itens: itens.map((item) => ({
           produto_id: item.produto_id,
@@ -210,6 +366,7 @@ export default function NovaComandaScreen({ navigation }) {
       setItens([]);
       setClienteSelecionado('');
       setTipoVenda('vista');
+      setMesa('');
       setObservacoes('');
       setProdutoSelecionado('');
       setQuantidade('1');
@@ -270,6 +427,7 @@ export default function NovaComandaScreen({ navigation }) {
             ...clientes.map((c) => ({ label: c.nome, value: c.id.toString() })),
           ]}
           onChange={setClienteSelecionado}
+          searchable
         />
 
         <Text style={styles.label}>Tipo de Venda</Text>
@@ -282,6 +440,14 @@ export default function NovaComandaScreen({ navigation }) {
             { label: 'Fiado (A Prazo)', value: 'fiado' },
           ]}
           onChange={setTipoVenda}
+        />
+
+        <Text style={styles.label}>Mesa / Local <Text style={{ color: '#E57373' }}>*</Text></Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: Mesa 5, Balcão, Delivery..."
+          value={mesa}
+          onChangeText={setMesa}
         />
 
         <Text style={styles.label}>Observações (opcional)</Text>
@@ -299,26 +465,37 @@ export default function NovaComandaScreen({ navigation }) {
         <Text style={styles.sectionTitle}>Adicionar Produtos</Text>
 
         <Text style={styles.label}>Produto</Text>
-        <SelectField
-          label="Selecione um produto"
+        <ProdutoPicker
           value={produtoSelecionado}
-          placeholder="Selecione um produto"
-          items={produtos.map((p) => ({
-            label: `${p.nome} — R$ ${Number(p.preco).toFixed(2)} (Est: ${p.quantidade_estoque})`,
-            value: p.id.toString(),
-          }))}
+          produtos={produtos}
+          categorias={categorias}
           onChange={setProdutoSelecionado}
         />
 
         <Text style={styles.label}>Quantidade</Text>
         <View style={styles.row}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="1"
-            value={quantidade}
-            onChangeText={setQuantidade}
-            keyboardType="numeric"
-          />
+          <View style={styles.stepper}>
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() => setQuantidade((q) => String(Math.max(1, parseInt(q, 10) - 1 || 1)))}
+            >
+              <Text style={styles.stepperBtnText}>−</Text>
+            </TouchableOpacity>
+            <TextInput
+              style={styles.stepperValue}
+              value={quantidade}
+              onChangeText={setQuantidade}
+              keyboardType="numeric"
+              textAlign="center"
+              selectTextOnFocus
+            />
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() => setQuantidade((q) => String((parseInt(q, 10) || 0) + 1))}
+            >
+              <Text style={styles.stepperBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={styles.addButton} onPress={adicionarItem}>
             <Text style={styles.addButtonText}>Adicionar</Text>
           </TouchableOpacity>
@@ -436,10 +613,12 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: '70%',
-    paddingBottom: 24,
+    borderRadius: 16,
+    maxHeight: '75%',
+    minHeight: 360,
+    marginHorizontal: 0,
+    marginBottom: 20,
+    paddingBottom: 16,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -459,6 +638,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#E57373',
     fontWeight: '600',
+  },
+  modalSearchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalSearchInput: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 15,
+  },
+  modalSemResultados: {
+    textAlign: 'center',
+    color: '#999',
+    padding: 24,
+    fontStyle: 'italic',
   },
   option: {
     flexDirection: 'row',
@@ -508,6 +708,36 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'center',
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    overflow: 'hidden',
+  },
+  stepperBtn: {
+    width: 44,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#eee',
+  },
+  stepperBtnText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    lineHeight: 26,
+  },
+  stepperValue: {
+    minWidth: 48,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
   },
   addButton: {
     backgroundColor: '#E57373',
@@ -573,6 +803,48 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#E57373',
+  },
+  pickerCategorias: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  pickerCategoriaChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginRight: 8,
+    backgroundColor: '#fff',
+  },
+  pickerCategoriaChipAtivo: {
+    backgroundColor: '#E57373',
+    borderColor: '#E57373',
+  },
+  pickerCategoriaChipText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  pickerCategoriaChipTextoAtivo: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  optionSubtext: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  optionDesabilitada: {
+    opacity: 0.45,
+  },
+  optionTextDesabilitada: {
+    color: '#bbb',
+  },
+  pickerSemEstoqueTag: {
+    fontSize: 11,
+    color: '#f44336',
+    fontWeight: '600',
+    marginLeft: 8,
   },
   createButton: {
     backgroundColor: '#E57373',

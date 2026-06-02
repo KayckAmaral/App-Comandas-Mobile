@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -26,6 +27,21 @@ export default function EstoqueScreen() {
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const [novaQuantidade, setNovaQuantidade] = useState('');
   const [atualizando, setAtualizando] = useState(false);
+  const [desativando, setDesativando] = useState(false);
+  const [busca, setBusca] = useState('');
+  const [filtroEstoque, setFiltroEstoque] = useState('todos');
+
+  const produtosFiltrados = useMemo(() => {
+    return produtos.filter((p) => {
+      const matchBusca = !busca || p.nome.toLowerCase().includes(busca.toLowerCase());
+      let matchFiltro = true;
+      if (filtroEstoque === 'sem') matchFiltro = p.quantidade_estoque === 0;
+      else if (filtroEstoque === 'baixo') matchFiltro = p.quantidade_estoque > 0 && p.quantidade_estoque <= p.estoque_minimo;
+      else if (filtroEstoque === 'ok') matchFiltro = p.quantidade_estoque > p.estoque_minimo;
+      else if (filtroEstoque === 'inativo') matchFiltro = !p.ativo;
+      return matchBusca && matchFiltro;
+    });
+  }, [produtos, busca, filtroEstoque]);
 
   useFocusEffect(
     useCallback(() => {
@@ -92,8 +108,38 @@ export default function EstoqueScreen() {
     }
   }
 
+  async function toggleAtivo() {
+    const novoAtivo = !produtoSelecionado.ativo;
+    const acao = novoAtivo ? 'reativar' : 'desativar';
+    Alert.alert(
+      novoAtivo ? 'Reativar Produto' : 'Desativar Produto',
+      `Deseja ${acao} "${produtoSelecionado.nome}"?${!novoAtivo ? ' Ele não aparecerá nas novas comandas.' : ''}`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: novoAtivo ? 'Reativar' : 'Desativar',
+          style: novoAtivo ? 'default' : 'destructive',
+          onPress: async () => {
+            setDesativando(true);
+            try {
+              await api.put(`/produtos/${produtoSelecionado.id}`, { ativo: novoAtivo });
+              fecharModal();
+              loadProdutos();
+            } catch (error) {
+              Alert.alert('Erro', error.response?.data?.message || `Não foi possível ${acao} o produto`);
+            } finally {
+              setDesativando(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
   function getEstoqueStatus(produto) {
-    if (produto.quantidade_estoque === 0) {
+    if (!produto.ativo) {
+      return { color: '#9E9E9E', label: 'INATIVO' };
+    } else if (produto.quantidade_estoque === 0) {
       return { color: '#f44336', label: 'SEM ESTOQUE' };
     } else if (produto.quantidade_estoque <= produto.estoque_minimo) {
       return { color: '#FF9800', label: 'ESTOQUE BAIXO' };
@@ -157,11 +203,40 @@ export default function EstoqueScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Gerenciar Estoque</Text>
-        <Text style={styles.headerSubtitle}>{produtos.length} produtos</Text>
+        <Text style={styles.headerSubtitle}>{produtosFiltrados.length} de {produtos.length} produtos</Text>
+      </View>
+
+      <View style={styles.filtrosContainer}>
+        <TextInput
+          style={styles.buscaInput}
+          placeholder="Buscar produto..."
+          value={busca}
+          onChangeText={setBusca}
+          clearButtonMode="while-editing"
+        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {[
+            { label: 'Todos', value: 'todos' },
+            { label: 'OK', value: 'ok' },
+            { label: 'Baixo', value: 'baixo' },
+            { label: 'Sem Estoque', value: 'sem' },
+            { label: 'Inativos', value: 'inativo' },
+          ].map((chip) => (
+            <TouchableOpacity
+              key={chip.value}
+              style={[styles.chip, filtroEstoque === chip.value && styles.chipAtivo]}
+              onPress={() => setFiltroEstoque(chip.value)}
+            >
+              <Text style={[styles.chipText, filtroEstoque === chip.value && styles.chipTextoAtivo]}>
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <FlatList
-        data={produtos}
+        data={produtosFiltrados}
         renderItem={renderProduto}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
@@ -207,7 +282,7 @@ export default function EstoqueScreen() {
                   <TouchableOpacity
                     style={[styles.modalButton, styles.cancelButton]}
                     onPress={fecharModal}
-                    disabled={atualizando}
+                    disabled={atualizando || desativando}
                   >
                     <Text style={styles.cancelButtonText}>Cancelar</Text>
                   </TouchableOpacity>
@@ -215,7 +290,7 @@ export default function EstoqueScreen() {
                   <TouchableOpacity
                     style={[styles.modalButton, styles.confirmButton]}
                     onPress={atualizarEstoque}
-                    disabled={atualizando}
+                    disabled={atualizando || desativando}
                   >
                     {atualizando ? (
                       <ActivityIndicator color="#fff" />
@@ -224,6 +299,24 @@ export default function EstoqueScreen() {
                     )}
                   </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.toggleAtivoButton,
+                    produtoSelecionado.ativo ? styles.desativarButton : styles.reativarButton,
+                    desativando && styles.buttonDisabled,
+                  ]}
+                  onPress={toggleAtivo}
+                  disabled={atualizando || desativando}
+                >
+                  {desativando ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.toggleAtivoText}>
+                      {produtoSelecionado.ativo ? 'Desativar Produto' : 'Reativar Produto'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
               </>
             )}
           </View>
@@ -402,5 +495,65 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  toggleAtivoButton: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  desativarButton: {
+    backgroundColor: '#FF9800',
+  },
+  reativarButton: {
+    backgroundColor: '#4CAF50',
+  },
+  toggleAtivoText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  buttonDisabled: {
+    backgroundColor: '#9E9E9E',
+  },
+  filtrosContainer: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  buscaInput: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginRight: 8,
+    backgroundColor: '#fff',
+  },
+  chipAtivo: {
+    backgroundColor: '#E57373',
+    borderColor: '#E57373',
+  },
+  chipText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
+  chipTextoAtivo: {
+    color: '#fff',
+    fontWeight: '700',
   },
 });

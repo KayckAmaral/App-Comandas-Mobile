@@ -16,6 +16,7 @@ export default function DetalhesComandaScreen({ route, navigation }) {
   const [comanda, setComanda] = useState(null);
   const [loading, setLoading] = useState(true);
   const [finalizando, setFinalizando] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
   const [apagando, setApagando] = useState(false);
 
   // Recarrega ao voltar da tela de edição
@@ -62,6 +63,37 @@ export default function DetalhesComandaScreen({ route, navigation }) {
               );
             } finally {
               setFinalizando(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  function cancelarComanda() {
+    Alert.alert(
+      'Cancelar Comanda',
+      'Deseja cancelar esta comanda? Os itens serão devolvidos ao estoque.',
+      [
+        { text: 'Voltar', style: 'cancel' },
+        {
+          text: 'Cancelar Comanda',
+          style: 'destructive',
+          onPress: async () => {
+            setCancelando(true);
+            try {
+              await api.patch(`/comandas/${comandaId}/cancelar`);
+              Alert.alert('Comanda cancelada', 'O estoque foi revertido.', [
+                { text: 'OK', onPress: () => navigation.goBack() },
+              ]);
+            } catch (error) {
+              console.error('Erro ao cancelar comanda:', error);
+              Alert.alert(
+                'Erro',
+                error.response?.data?.message || 'Não foi possível cancelar a comanda'
+              );
+            } finally {
+              setCancelando(false);
             }
           },
         },
@@ -178,6 +210,13 @@ export default function DetalhesComandaScreen({ route, navigation }) {
           </View>
         )}
 
+        {comanda.mesa && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Mesa:</Text>
+            <Text style={styles.infoValue}>{comanda.mesa}</Text>
+          </View>
+        )}
+
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Atendente:</Text>
           <Text style={styles.infoValue}>{comanda.usuario_nome}</Text>
@@ -255,6 +294,18 @@ export default function DetalhesComandaScreen({ route, navigation }) {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.finalizarButtonText}>Finalizar Comanda</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.cancelarButton, cancelando && styles.buttonDisabled]}
+            onPress={cancelarComanda}
+            disabled={cancelando}
+          >
+            {cancelando ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.cancelarButtonText}>Cancelar Comanda</Text>
             )}
           </TouchableOpacity>
         </>
@@ -446,6 +497,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#9E9E9E',
   },
   finalizarButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  cancelarButton: {
+    backgroundColor: '#FF9800',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 12,
+  },
+  cancelarButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',

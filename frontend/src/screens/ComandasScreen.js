@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  TextInput,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +20,21 @@ export default function ComandasScreen({ navigation }) {
   const [comandas, setComandas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('todas');
+
+  const comandasFiltradas = useMemo(() => {
+    return comandas.filter((c) => {
+      const termoBusca = busca.toLowerCase();
+      const matchBusca =
+        !busca ||
+        String(c.id).includes(busca) ||
+        (c.cliente_nome && c.cliente_nome.toLowerCase().includes(termoBusca)) ||
+        (c.mesa && c.mesa.toLowerCase().includes(termoBusca));
+      const matchStatus = filtroStatus === 'todas' || c.status === filtroStatus;
+      return matchBusca && matchStatus;
+    });
+  }, [comandas, busca, filtroStatus]);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,15 +80,58 @@ export default function ComandasScreen({ navigation }) {
   async function apagarComanda(id) {
     try {
       await api.delete(`/comandas/${id}`);
-      // Remove localmente sem precisar recarregar tudo
       setComandas((prev) => prev.filter((c) => c.id !== id));
     } catch (error) {
       console.error('Erro ao apagar comanda:', error);
-      Alert.alert(
-        'Erro',
-        error.response?.data?.message || 'Não foi possível apagar a comanda'
-      );
+      Alert.alert('Erro', error.response?.data?.message || 'Não foi possível apagar a comanda');
     }
+  }
+
+  function confirmarFinalizar(item) {
+    Alert.alert(
+      'Finalizar Comanda',
+      `Finalizar ${item.mesa || `#${item.id}`}? Esta ação não pode ser desfeita.`,
+      [
+        { text: 'Voltar', style: 'cancel' },
+        {
+          text: 'Finalizar',
+          onPress: async () => {
+            try {
+              await api.patch(`/comandas/${item.id}/finalizar`);
+              setComandas((prev) =>
+                prev.map((c) => (c.id === item.id ? { ...c, status: 'fechada' } : c))
+              );
+            } catch (error) {
+              Alert.alert('Erro', error.response?.data?.message || 'Não foi possível finalizar');
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  function confirmarCancelar(item) {
+    Alert.alert(
+      'Cancelar Comanda',
+      `Cancelar ${item.mesa || `#${item.id}`}? Os itens serão devolvidos ao estoque.`,
+      [
+        { text: 'Voltar', style: 'cancel' },
+        {
+          text: 'Cancelar Comanda',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.patch(`/comandas/${item.id}/cancelar`);
+              setComandas((prev) =>
+                prev.map((c) => (c.id === item.id ? { ...c, status: 'cancelada' } : c))
+              );
+            } catch (error) {
+              Alert.alert('Erro', error.response?.data?.message || 'Não foi possível cancelar');
+            }
+          },
+        },
+      ]
+    );
   }
 
   function getStatusColor(status) {
@@ -103,9 +163,10 @@ export default function ComandasScreen({ navigation }) {
       <TouchableOpacity
         style={styles.comandaCard}
         onPress={() => navigation.navigate('DetalhesComanda', { comandaId: item.id })}
+        activeOpacity={0.85}
       >
         <View style={styles.comandaHeader}>
-          <Text style={styles.comandaId}>Comanda #{item.id}</Text>
+          <Text style={styles.comandaMesa}>{item.mesa || `Comanda #${item.id}`}</Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
             <Text style={styles.statusText}>
               {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
@@ -113,39 +174,56 @@ export default function ComandasScreen({ navigation }) {
           </View>
         </View>
 
-        <View style={styles.comandaInfo}>
-          <Text style={styles.infoLabel}>Cliente:</Text>
-          <Text style={styles.infoValue}>
-            {item.cliente_nome || 'Sem cliente'}
-          </Text>
+        <Text style={styles.comandaSubtitulo}>
+          #{item.id}{item.cliente_nome ? ` • ${item.cliente_nome}` : ''}
+        </Text>
+
+        <View style={styles.infoRow}>
+          <View style={styles.comandaInfo}>
+            <Text style={styles.infoLabel}>Tipo:</Text>
+            <Text style={styles.infoValue}>
+              {item.tipo_venda === 'vista' ? 'À Vista' : 'Fiado'}
+            </Text>
+          </View>
+          <View style={styles.comandaInfo}>
+            <Text style={styles.infoLabel}>Total:</Text>
+            <Text style={styles.totalValue}>R$ {Number(item.valor_total).toFixed(2)}</Text>
+          </View>
         </View>
 
-        <View style={styles.comandaInfo}>
-          <Text style={styles.infoLabel}>Tipo:</Text>
-          <Text style={styles.infoValue}>
-            {item.tipo_venda === 'vista' ? 'À Vista' : 'Fiado'}
-          </Text>
-        </View>
+        <Text style={styles.dateText}>{formatDate(item.data_abertura)}</Text>
 
-        <View style={styles.comandaInfo}>
-          <Text style={styles.infoLabel}>Total:</Text>
-          <Text style={styles.totalValue}>
-            R$ {Number(item.valor_total).toFixed(2)}
-          </Text>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.dateText}>{formatDate(item.data_abertura)}</Text>
-          {item.status !== 'aberta' && (
+        {item.status === 'aberta' && (
+          <View style={styles.acoesRow}>
             <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => confirmarApagar(item)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={[styles.acaoBotao, styles.editarBotao]}
+              onPress={() => navigation.navigate('EditarComanda', { comandaId: item.id })}
             >
-              <Text style={styles.deleteButtonText}>🗑️ Apagar</Text>
+              <Text style={styles.acaoBotaoText}>✏️ Editar</Text>
             </TouchableOpacity>
-          )}
-        </View>
+            <TouchableOpacity
+              style={[styles.acaoBotao, styles.finalizarBotao]}
+              onPress={() => confirmarFinalizar(item)}
+            >
+              <Text style={styles.acaoBotaoText}>✅ Finalizar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.acaoBotao, styles.cancelarBotao]}
+              onPress={() => confirmarCancelar(item)}
+            >
+              <Text style={styles.acaoBotaoText}>✕ Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {item.status !== 'aberta' && (
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => confirmarApagar(item)}
+          >
+            <Text style={styles.deleteButtonText}>🗑️ Apagar</Text>
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     );
   }
@@ -170,6 +248,34 @@ export default function ComandasScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.filtrosContainer}>
+        <TextInput
+          style={styles.buscaInput}
+          placeholder="Buscar por nº, cliente ou mesa..."
+          value={busca}
+          onChangeText={setBusca}
+          clearButtonMode="while-editing"
+        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
+          {[
+            { label: 'Todas', value: 'todas' },
+            { label: 'Abertas', value: 'aberta' },
+            { label: 'Fechadas', value: 'fechada' },
+            { label: 'Canceladas', value: 'cancelada' },
+          ].map((chip) => (
+            <TouchableOpacity
+              key={chip.value}
+              style={[styles.chip, filtroStatus === chip.value && styles.chipAtivo]}
+              onPress={() => setFiltroStatus(chip.value)}
+            >
+              <Text style={[styles.chipText, filtroStatus === chip.value && styles.chipTextoAtivo]}>
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       {comandas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>📋</Text>
@@ -181,9 +287,14 @@ export default function ComandasScreen({ navigation }) {
             <Text style={styles.emptyButtonText}>Criar primeira comanda</Text>
           </TouchableOpacity>
         </View>
+      ) : comandasFiltradas.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>🔍</Text>
+          <Text style={styles.emptyMessage}>Nenhuma comanda encontrada para este filtro</Text>
+        </View>
       ) : (
         <FlatList
-          data={comandas}
+          data={comandasFiltradas}
           renderItem={renderComanda}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
@@ -249,12 +360,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
-  comandaId: {
-    fontSize: 18,
+  comandaMesa: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
+    marginRight: 8,
+  },
+  comandaSubtitulo: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 10,
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -266,45 +384,71 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  comandaInfo: {
+  infoRow: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: 4,
+  },
+  comandaInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    marginBottom: 4,
   },
   infoLabel: {
-    fontSize: 14,
-    color: '#666',
-    width: 60,
+    fontSize: 13,
+    color: '#888',
+    marginRight: 4,
   },
   infoValue: {
-    flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: '#333',
+    fontWeight: '500',
   },
   totalValue: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#E57373',
   },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
   dateText: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 11,
+    color: '#bbb',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  acoesRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  acaoBotao: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  acaoBotaoText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  editarBotao: {
+    backgroundColor: '#E57373',
+  },
+  finalizarBotao: {
+    backgroundColor: '#2196F3',
+  },
+  cancelarBotao: {
+    backgroundColor: '#FF9800',
   },
   deleteButton: {
     backgroundColor: '#f44336',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingVertical: 9,
     borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 4,
   },
   deleteButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   emptyContainer: {
@@ -333,5 +477,48 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  filtrosContainer: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  buscaInput: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  chipsScroll: {
+    flexDirection: 'row',
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginRight: 8,
+    backgroundColor: '#fff',
+  },
+  chipAtivo: {
+    backgroundColor: '#E57373',
+    borderColor: '#E57373',
+  },
+  chipText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
+  chipTextoAtivo: {
+    color: '#fff',
+    fontWeight: '700',
   },
 });

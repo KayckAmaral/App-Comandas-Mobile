@@ -19,6 +19,7 @@ if (process.env.NODE_ENV === 'development') {
 
 // Rotas
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/categorias', require('./routes/categorias'));
 app.use('/api/produtos', require('./routes/produtos'));
 app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/comandas', require('./routes/comandas'));
