@@ -146,7 +146,7 @@ export default function RelatoriosScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#E57373" />
+          <ActivityIndicator size="large" color="#E53935" />
         </View>
       ) : dados ? (
         <>
@@ -158,7 +158,7 @@ export default function RelatoriosScreen() {
 
           {/* Cards de resumo */}
           <View style={styles.resumoRow}>
-            <View style={[styles.resumoCard, { borderTopColor: '#E57373' }]}>
+            <View style={[styles.resumoCard, { borderTopColor: '#E53935' }]}>
               <Text style={styles.resumoValor}>{fmtMoeda(dados.resumo.faturamento)}</Text>
               <Text style={styles.resumoLabel}>Faturamento</Text>
             </View>
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
     borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff',
   },
-  periodoChipAtivo: { backgroundColor: '#E57373', borderColor: '#E57373' },
+  periodoChipAtivo: { backgroundColor: '#E53935', borderColor: '#E53935' },
   periodoChipText: { fontSize: 13, color: '#666', fontWeight: '500' },
   periodoChipTextoAtivo: { color: '#fff', fontWeight: '700' },
   customRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 16 },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     borderRadius: 8, padding: 10, fontSize: 14,
   },
   buscarBtn: {
-    backgroundColor: '#E57373', paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: '#E53935', paddingHorizontal: 14, paddingVertical: 10,
     borderRadius: 8, alignItems: 'center', justifyContent: 'center',
   },
   buscarBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
@@ -270,12 +270,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
   },
   produtoRank: {
-    width: 28, height: 28, borderRadius: 14, backgroundColor: '#E57373',
+    width: 28, height: 28, borderRadius: 14, backgroundColor: '#E53935',
     justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
   produtoRankNum: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
   produtoNome: { flex: 1, fontSize: 14, color: '#333', fontWeight: '500' },
   produtoNums: { alignItems: 'flex-end' },
   produtoQtd: { fontSize: 13, color: '#888' },
-  produtoReceita: { fontSize: 13, fontWeight: 'bold', color: '#E57373' },
+  produtoReceita: { fontSize: 13, fontWeight: 'bold', color: '#E53935' },
 });

@@ -278,7 +278,7 @@ export default function ComandasScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   newButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#E57373',
+    color: '#E53935',
   },
   dateText: {
     fontSize: 11,
@@ -478,10 +478,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   editarBotao: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#1976D2',
   },
   finalizarBotao: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#388E3C',
   },
   cancelarBotao: {
     backgroundColor: '#FF9800',
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -550,8 +550,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   chipAtivo: {
-    backgroundColor: '#E57373',
-    borderColor: '#E57373',
+    backgroundColor: '#E53935',
+    borderColor: '#E53935',
   },
   chipText: {
     fontSize: 13,

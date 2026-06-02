@@ -430,7 +430,7 @@ export default function EditarComandaScreen({ route, navigation }) {
   if (loading || !comanda) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
   },
   modalClose: {
     fontSize: 14,
-    color: '#E57373',
+    color: '#E53935',
     fontWeight: '600',
   },
   option: {
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f5f5f5',
   },
   optionSelected: {
-    backgroundColor: '#FCE4E4',
+    backgroundColor: '#FFEBEE',
   },
   optionText: {
     flex: 1,
@@ -762,12 +762,12 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   optionTextSelected: {
-    color: '#E57373',
+    color: '#E53935',
     fontWeight: '600',
   },
   optionCheck: {
     fontSize: 16,
-    color: '#E57373',
+    color: '#E53935',
     fontWeight: 'bold',
     marginLeft: 8,
   },
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
   itemSubtotal: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E57373',
+    color: '#E53935',
     marginLeft: 8,
   },
   itemPrecoUnit: {
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f44336',
   },
   saveBtn: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
   },
   cancelBtn: {
     backgroundColor: '#9E9E9E',
@@ -904,10 +904,10 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#E57373',
+    color: '#E53935',
   },
   addButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
@@ -931,8 +931,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   pickerCategoriaChipAtivo: {
-    backgroundColor: '#E57373',
-    borderColor: '#E57373',
+    backgroundColor: '#E53935',
+    borderColor: '#E53935',
   },
   pickerCategoriaChipText: {
     fontSize: 12,

@@ -189,7 +189,7 @@ export default function DetalhesComandaScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
   itemSubtotal: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E57373',
+    color: '#E53935',
     marginLeft: 8,
   },
   itemDescricao: {
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   totalContainer: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     padding: 20,
     marginTop: 12,
     flexDirection: 'row',
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   editarButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',

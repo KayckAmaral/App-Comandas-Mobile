@@ -82,7 +82,7 @@ export default function DetalhesClienteScreen({ route, navigation }) {
   if (loading || !dados) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -196,7 +196,7 @@ export default function DetalhesClienteScreen({ route, navigation }) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitulo}>Editar Cliente</Text>
 
-            <Text style={styles.formLabel}>Nome <Text style={{ color: '#E57373' }}>*</Text></Text>
+            <Text style={styles.formLabel}>Nome <Text style={{ color: '#E53935' }}>*</Text></Text>
             <TextInput
               style={styles.formInput}
               value={form.nome}
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   section: { backgroundColor: '#fff', padding: 20, marginTop: 12 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 17, fontWeight: 'bold', color: '#333' },
-  editBtn: { backgroundColor: '#E57373', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  editBtn: { backgroundColor: '#E53935', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   editBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   infoRow: { flexDirection: 'row', marginBottom: 10 },
   infoLabel: { fontSize: 14, color: '#888', width: 80 },
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5', borderWidth: 1, borderColor: '#ddd',
   },
   cancelarBtnText: { color: '#666', fontWeight: '600' },
-  salvarBtn: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center', backgroundColor: '#E57373' },
+  salvarBtn: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center', backgroundColor: '#E53935' },
   salvarBtnText: { color: '#fff', fontWeight: 'bold' },
   btnDisabled: { backgroundColor: '#9E9E9E' },
 });

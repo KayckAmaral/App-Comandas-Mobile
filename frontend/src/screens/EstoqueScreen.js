@@ -197,7 +197,7 @@ export default function EstoqueScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#fff',
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     textAlign: 'center',
     marginTop: 12,
     paddingVertical: 10,
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   confirmButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
   },
   confirmButtonText: {
     color: '#fff',
@@ -549,8 +549,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   chipAtivo: {
-    backgroundColor: '#E57373',
-    borderColor: '#E57373',
+    backgroundColor: '#E53935',
+    borderColor: '#E53935',
   },
   chipText: {
     fontSize: 13,

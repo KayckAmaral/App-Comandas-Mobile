@@ -397,7 +397,7 @@ export default function NovaComandaScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -442,7 +442,7 @@ export default function NovaComandaScreen({ navigation }) {
           onChange={setTipoVenda}
         />
 
-        <Text style={styles.label}>Mesa / Local <Text style={{ color: '#E57373' }}>*</Text></Text>
+        <Text style={styles.label}>Mesa / Local <Text style={{ color: '#E53935' }}>*</Text></Text>
         <TextInput
           style={styles.input}
           placeholder="Ex: Mesa 5, Balcão, Delivery..."
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   },
   modalClose: {
     fontSize: 14,
-    color: '#E57373',
+    color: '#E53935',
     fontWeight: '600',
   },
   modalSearchContainer: {
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f5f5f5',
   },
   optionSelected: {
-    backgroundColor: '#FCE4E4',
+    backgroundColor: '#FFEBEE',
   },
   optionText: {
     flex: 1,
@@ -678,12 +678,12 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   optionTextSelected: {
-    color: '#E57373',
+    color: '#E53935',
     fontWeight: '600',
   },
   optionCheck: {
     fontSize: 16,
-    color: '#E57373',
+    color: '#E53935',
     fontWeight: 'bold',
     marginLeft: 8,
   },
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   addButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#E57373',
+    color: '#E53935',
   },
   pickerCategorias: {
     borderBottomWidth: 1,
@@ -818,8 +818,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   pickerCategoriaChipAtivo: {
-    backgroundColor: '#E57373',
-    borderColor: '#E57373',
+    backgroundColor: '#E53935',
+    borderColor: '#E53935',
   },
   pickerCategoriaChipText: {
     fontSize: 12,
@@ -847,7 +847,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   createButton: {
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',

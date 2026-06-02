@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Text, View, ActivityIndicator, TouchableOpacity, StyleSheet, Animated, Modal } from 'react-native';
+import { Text, View, ActivityIndicator, TouchableOpacity, StyleSheet, Animated, Modal, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { DrawerProvider, useDrawerMenu } from '../contexts/DrawerContext';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -79,7 +80,7 @@ function ComandasStack() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#E57373',
+          backgroundColor: '#E53935',
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
@@ -118,11 +119,15 @@ function ComandasStack() {
 function SidebarTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { signOut } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(-270)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const isGerente = !user?.role || user?.role === 'gerente';
+  const drawerMenuRef = useDrawerMenu();
+
+  if (drawerMenuRef) drawerMenuRef.current = openDrawer;
 
   function openDrawer() {
     setDrawerOpen(true);
@@ -151,9 +156,13 @@ function SidebarTabBar({ state, descriptors, navigation }) {
     <>
       {/* Barra inferior minimalista */}
       <View style={[barStyles.bar, { paddingBottom: insets.bottom, height: 52 + insets.bottom }]}>
-        <TouchableOpacity onPress={openDrawer} style={barStyles.menuBtn} activeOpacity={0.7}>
-          <Text style={barStyles.menuIcon}>☰</Text>
-          <Text style={barStyles.menuLabel}>Menu</Text>
+        <TouchableOpacity
+          style={barStyles.novaBtn}
+          onPress={() => navigation.navigate('Comandas', { screen: 'NovaComanda' })}
+          activeOpacity={0.7}
+        >
+          <Text style={barStyles.novaIcon}>＋</Text>
+          <Text style={barStyles.novaLabel}>Nova</Text>
         </TouchableOpacity>
 
         <View style={barStyles.centerSection}>
@@ -165,13 +174,12 @@ function SidebarTabBar({ state, descriptors, navigation }) {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={barStyles.novaBtn}
-          onPress={() => navigation.navigate('Comandas', { screen: 'NovaComanda' })}
-          activeOpacity={0.7}
-        >
-          <Text style={barStyles.novaIcon}>＋</Text>
-          <Text style={barStyles.novaLabel}>Nova</Text>
+        <TouchableOpacity onPress={openDrawer} style={barStyles.avatarBtn} activeOpacity={0.7}>
+          <View style={barStyles.avatarCircle}>
+            <Text style={barStyles.avatarText}>
+              {user?.nome?.charAt(0).toUpperCase() || '?'}
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -209,7 +217,7 @@ function SidebarTabBar({ state, descriptors, navigation }) {
                   activeOpacity={0.75}
                 >
                   <View style={drawerStyles.itemIcon}>
-                    {options.tabBarIcon?.({ focused: isFocused, color: isFocused ? '#E57373' : '#555', size: 22 })}
+                    {options.tabBarIcon?.({ focused: isFocused, color: isFocused ? '#E53935' : '#555', size: 22 })}
                   </View>
                   <Text style={[drawerStyles.itemLabel, isFocused && drawerStyles.itemLabelAtivo]}>
                     {label}
@@ -218,6 +226,24 @@ function SidebarTabBar({ state, descriptors, navigation }) {
                 </TouchableOpacity>
               );
             })}
+
+            <View style={drawerStyles.separator} />
+
+            <TouchableOpacity
+              style={drawerStyles.item}
+              onPress={() => closeDrawer(() =>
+                Alert.alert('Sair', 'Deseja realmente sair?', [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Sair', style: 'destructive', onPress: signOut },
+                ])
+              )}
+              activeOpacity={0.75}
+            >
+              <View style={drawerStyles.itemIcon}>
+                <Text style={{ fontSize: 18 }}>🚪</Text>
+              </View>
+              <Text style={[drawerStyles.itemLabel, drawerStyles.itemLabelSair]}>Sair</Text>
+            </TouchableOpacity>
           </Animated.View>
         </View>
       </Modal>
@@ -241,16 +267,19 @@ const barStyles = StyleSheet.create({
     shadowRadius: 4,
   },
   novaBtn: { alignItems: 'center', justifyContent: 'center', padding: 8, minWidth: 56 },
-  novaIcon: { fontSize: 22, color: '#E57373', fontWeight: 'bold' },
-  novaLabel: { fontSize: 10, color: '#E57373', fontWeight: '700', marginTop: 1 },
+  novaIcon: { fontSize: 22, color: '#E53935', fontWeight: 'bold' },
+  novaLabel: { fontSize: 10, color: '#E53935', fontWeight: '700', marginTop: 1 },
   centerSection: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   screenTitle: { fontSize: 15, fontWeight: '600', color: '#333', textAlign: 'center' },
   dotsRow: { flexDirection: 'row', gap: 5, marginTop: 4 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#ddd' },
-  dotAtivo: { width: 28, height: 8, borderRadius: 4, backgroundColor: '#E57373' },
-  menuBtn: { alignItems: 'center', justifyContent: 'center', padding: 8, minWidth: 56 },
-  menuIcon: { fontSize: 24, color: '#E57373' },
-  menuLabel: { fontSize: 10, color: '#E57373', fontWeight: '600', marginTop: 1 },
+  dotAtivo: { width: 28, height: 8, borderRadius: 4, backgroundColor: '#E53935' },
+  avatarBtn: { alignItems: 'center', justifyContent: 'center', minWidth: 56 },
+  avatarCircle: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: '#E53935', justifyContent: 'center', alignItems: 'center',
+  },
+  avatarText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
 });
 
 const drawerStyles = StyleSheet.create({
@@ -265,7 +294,7 @@ const drawerStyles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
-  header: { padding: 24, paddingTop: 20, backgroundColor: '#E57373' },
+  header: { padding: 24, paddingTop: 20, backgroundColor: '#E53935' },
   appName: { fontSize: 20, fontWeight: 'bold', color: '#fff', marginBottom: 10 },
   userName: { fontSize: 14, color: 'rgba(255,255,255,0.9)', marginBottom: 8 },
   roleBadge: {
@@ -280,11 +309,12 @@ const drawerStyles = StyleSheet.create({
     paddingVertical: 14, paddingHorizontal: 20,
     borderRadius: 10, marginHorizontal: 8, marginVertical: 2,
   },
-  itemAtivo: { backgroundColor: '#FCE4E4' },
+  itemAtivo: { backgroundColor: '#FFEBEE' },
   itemIcon: { width: 30, alignItems: 'center' },
   itemLabel: { flex: 1, fontSize: 15, color: '#444', fontWeight: '500', marginLeft: 14 },
-  itemLabelAtivo: { color: '#E57373', fontWeight: '700' },
-  itemDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#E57373' },
+  itemLabelAtivo: { color: '#E53935', fontWeight: '700' },
+  itemDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#E53935' },
+  itemLabelSair: { color: '#f44336' },
 });
 
 // Stack de Clientes
@@ -292,7 +322,7 @@ function ClientesStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#E57373' },
+        headerStyle: { backgroundColor: '#E53935' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },
         headerBackTitleVisible: false,
@@ -313,6 +343,7 @@ function AppTabs() {
   const isGerente = !user?.role || user?.role === 'gerente';
 
   return (
+    <DrawerProvider>
     <Tab.Navigator
       tabBarPosition="bottom"
       tabBar={(props) => <SidebarTabBar {...props} />}
@@ -368,6 +399,7 @@ function AppTabs() {
         />
       )}
     </Tab.Navigator>
+    </DrawerProvider>
   );
 }
 
@@ -384,7 +416,7 @@ export default function Routes() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E57373' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E53935' }}>
         <ActivityIndicator size="large" color="#fff" />
       </View>
     );

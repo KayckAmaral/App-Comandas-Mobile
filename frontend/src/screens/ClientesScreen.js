@@ -127,7 +127,7 @@ export default function ClientesScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e0e0e0',
   },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  novoBtn: { backgroundColor: '#E57373', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  novoBtn: { backgroundColor: '#E53935', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
   novoBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   buscaContainer: {
     backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 10,
@@ -255,18 +255,18 @@ const styles = StyleSheet.create({
   cardInfo: { fontSize: 13, color: '#666' },
   cardInfoVazio: { fontSize: 13, color: '#bbb', fontStyle: 'italic' },
   cardAcoes: { flexDirection: 'row', justifyContent: 'flex-end' },
-  editarBtn: { backgroundColor: '#E57373', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
+  editarBtn: { backgroundColor: '#E53935', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
   editarBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   emptyIcon: { fontSize: 56, marginBottom: 12 },
   emptyMessage: { fontSize: 16, color: '#666', marginBottom: 20, textAlign: 'center' },
-  emptyButton: { backgroundColor: '#E57373', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  emptyButton: { backgroundColor: '#E53935', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   emptyButtonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
   modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 24 },
   modalTitulo: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 20 },
   formLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6, marginTop: 12 },
-  obrigatorio: { color: '#E57373' },
+  obrigatorio: { color: '#E53935' },
   formInput: {
     backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#ddd',
     borderRadius: 8, padding: 12, fontSize: 15,
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5', borderWidth: 1, borderColor: '#ddd',
   },
   cancelarBtnText: { color: '#666', fontWeight: '600' },
-  salvarBtn: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center', backgroundColor: '#E57373' },
+  salvarBtn: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center', backgroundColor: '#E53935' },
   salvarBtnText: { color: '#fff', fontWeight: 'bold' },
   btnDisabled: { backgroundColor: '#9E9E9E' },
 });

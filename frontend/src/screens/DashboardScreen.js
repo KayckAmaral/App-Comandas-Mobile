@@ -7,15 +7,19 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Alert,
+  Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { useDrawerMenu } from '../contexts/DrawerContext';
 import api from '../services/api';
 
+const logo = require('../../assets/logo.png');
+
 export default function DashboardScreen({ navigation }) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const drawerMenuRef = useDrawerMenu();
   const insets = useSafeAreaInsets();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,21 +49,10 @@ export default function DashboardScreen({ navigation }) {
     loadDashboardData();
   }
 
-  function handleLogout() {
-    Alert.alert(
-      'Sair',
-      'Deseja realmente sair do aplicativo?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', onPress: signOut, style: 'destructive' },
-      ]
-    );
-  }
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E57373" />
+        <ActivityIndicator size="large" color="#E53935" />
       </View>
     );
   }
@@ -72,13 +65,14 @@ export default function DashboardScreen({ navigation }) {
       }
     >
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <View>
-          <Text style={styles.greeting}>Olá, {user?.nome?.split(' ')[0]}! 👋</Text>
-          <Text style={styles.subtitle}>Bem-vindo ao FastComanda</Text>
-        </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Sair</Text>
+        <TouchableOpacity style={styles.menuBtn} onPress={() => drawerMenuRef?.current?.()} activeOpacity={0.7}>
+          <Text style={styles.menuIcon}>☰</Text>
+          <Text style={styles.menuLabel}>Menu</Text>
         </TouchableOpacity>
+
+        <Text style={styles.appTitle}>FastComanda</Text>
+
+        <Image source={logo} style={styles.logoImg} resizeMode="contain" />
       </View>
 
       {/* Cards de Estatísticas */}
@@ -153,6 +147,14 @@ export default function DashboardScreen({ navigation }) {
           <Text style={styles.actionIcon}>📦</Text>
           <Text style={styles.actionText}>Gerenciar Estoque</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Relatorios')}
+        >
+          <Text style={styles.actionIcon}>📊</Text>
+          <Text style={styles.actionText}>Ver Relatórios</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -170,30 +172,26 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  greeting: {
-    fontSize: 24,
+  menuBtn: { alignItems: 'center', justifyContent: 'center', minWidth: 48 },
+  menuIcon: { fontSize: 24, color: '#E53935' },
+  menuLabel: { fontSize: 10, color: '#E53935', fontWeight: '600', marginTop: 1 },
+  appTitle: {
+    flex: 1,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#E53935',
+    letterSpacing: 1,
+    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  logoutButton: {
-    padding: 8,
-  },
-  logoutText: {
-    color: '#f44336',
-    fontWeight: '600',
-  },
+  logoImg: { width: 42, height: 42 },
   statsContainer: {
     flexDirection: 'row',
     padding: 20,
@@ -201,7 +199,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
@@ -238,7 +236,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E57373',
+    backgroundColor: '#E53935',
     marginRight: 12,
   },
   statusText: {
@@ -260,7 +258,7 @@ const styles = StyleSheet.create({
     width: 30,
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E57373',
+    color: '#E53935',
   },
   productName: {
     flex: 1,
