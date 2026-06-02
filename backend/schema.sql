@@ -6,6 +6,7 @@ USE fastcomanda;
 CREATE TABLE IF NOT EXISTS usuarios (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(100) NOT NULL,
+  role ENUM('gerente', 'garcom') NOT NULL DEFAULT 'gerente',
   email VARCHAR(100) UNIQUE NOT NULL,
   senha VARCHAR(255) NOT NULL,
   expo_push_token VARCHAR(255),
