@@ -10,6 +10,7 @@ import {
   Alert,
   TextInput,
   ScrollView,
+  Share,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -134,6 +135,42 @@ export default function ComandasScreen({ navigation }) {
     );
   }
 
+  async function compartilharComprovante(id) {
+    try {
+      const res = await api.get(`/comandas/${id}`);
+      const c = res.data.data;
+
+      const dataFormatada = new Date(c.data_abertura).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+
+      const itensTexto = c.itens
+        .map((i) => `  • ${i.produto_nome} x${i.quantidade}   R$ ${Number(i.subtotal).toFixed(2)}`)
+        .join('\n');
+
+      const linhas = [
+        '🍽️  FastComanda',
+        '─────────────────────────',
+        `Comanda: #${c.id}${c.mesa ? ` • ${c.mesa}` : ''}`,
+        `Data: ${dataFormatada}`,
+        c.cliente_nome ? `Cliente: ${c.cliente_nome}` : null,
+        `Atendente: ${c.usuario_nome}`,
+        '─────────────────────────',
+        'ITENS:',
+        itensTexto,
+        '─────────────────────────',
+        `TOTAL: R$ ${Number(c.valor_total).toFixed(2)}`,
+        `Pagamento: ${c.tipo_venda === 'vista' ? 'À Vista' : 'Fiado'}`,
+        c.observacoes ? `Obs: ${c.observacoes}` : null,
+      ].filter(Boolean).join('\n');
+
+      await Share.share({ message: linhas });
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível gerar o comprovante');
+    }
+  }
+
   function getStatusColor(status) {
     switch (status) {
       case 'aberta':
@@ -217,12 +254,22 @@ export default function ComandasScreen({ navigation }) {
         )}
 
         {item.status !== 'aberta' && (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => confirmarApagar(item)}
-          >
-            <Text style={styles.deleteButtonText}>🗑️ Apagar</Text>
-          </TouchableOpacity>
+          <View style={styles.acoesRow}>
+            {item.status === 'fechada' && (
+              <TouchableOpacity
+                style={[styles.acaoBotao, styles.compartilharBotao]}
+                onPress={() => compartilharComprovante(item.id)}
+              >
+                <Text style={styles.acaoBotaoText}>📤 Comprovante</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[styles.acaoBotao, styles.apagarBotao]}
+              onPress={() => confirmarApagar(item)}
+            >
+              <Text style={styles.acaoBotaoText}>🗑️ Apagar</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </TouchableOpacity>
     );
@@ -439,17 +486,11 @@ const styles = StyleSheet.create({
   cancelarBotao: {
     backgroundColor: '#FF9800',
   },
-  deleteButton: {
-    backgroundColor: '#f44336',
-    paddingVertical: 9,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 4,
+  compartilharBotao: {
+    backgroundColor: '#4CAF50',
   },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
+  apagarBotao: {
+    backgroundColor: '#f44336',
   },
   emptyContainer: {
     flex: 1,

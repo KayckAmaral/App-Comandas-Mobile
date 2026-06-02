@@ -15,6 +15,8 @@ import NovaComandaScreen from '../screens/NovaComandaScreen';
 import DetalhesComandaScreen from '../screens/DetalhesComandaScreen';
 import EditarComandaScreen from '../screens/EditarComandaScreen';
 import EstoqueScreen from '../screens/EstoqueScreen';
+import ClientesScreen from '../screens/ClientesScreen';
+import DetalhesClienteScreen from '../screens/DetalhesClienteScreen';
 
 const Stack = createStackNavigator();
 const Tab = createMaterialTopTabNavigator();
@@ -182,6 +184,24 @@ const tabBarStyles = StyleSheet.create({
   },
 });
 
+// Stack de Clientes
+function ClientesStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: '#E57373' },
+        headerTintColor: '#fff',
+        headerTitleStyle: { fontWeight: 'bold' },
+        headerBackTitleVisible: false,
+        headerLeft: (props) => <CustomBackButton {...props} />,
+      }}
+    >
+      <Stack.Screen name="ListaClientes" component={ClientesScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DetalhesCliente" component={DetalhesClienteScreen} options={{ title: 'Detalhes do Cliente' }} />
+    </Stack.Navigator>
+  );
+}
+
 // Tab Navigator Principal (após login) — material-top-tabs no rodapé
 // dá swipe horizontal entre as 3 abas em qualquer ponto da tela.
 function AppTabs() {
@@ -209,6 +229,14 @@ function AppTabs() {
         options={{
           title: 'Comandas',
           tabBarIcon: ({ size }) => <TabIcon name="📋" size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Clientes"
+        component={ClientesStack}
+        options={{
+          title: 'Clientes',
+          tabBarIcon: ({ size }) => <TabIcon name="👥" size={size} />,
         }}
       />
       <Tab.Screen

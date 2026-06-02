@@ -9,6 +9,9 @@ router.use(authMiddleware);
 // GET /api/clientes - Listar todos os clientes
 router.get('/', clienteController.listarClientes);
 
+// GET /api/clientes/:id/historico - Histórico de comandas e fiado do cliente
+router.get('/:id/historico', clienteController.historicoCliente);
+
 // GET /api/clientes/:id - Buscar cliente por ID
 router.get('/:id', clienteController.buscarCliente);
 

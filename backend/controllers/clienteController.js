@@ -173,4 +173,42 @@ exports.deletarCliente = async (req, res) => {
   }
 };
 
+// Histórico de comandas e resumo de fiado do cliente
+exports.historicoCliente = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [clientes] = await db.query('SELECT * FROM clientes WHERE id = ?', [id]);
+    if (clientes.length === 0) {
+      return res.status(404).json({ success: false, message: 'Cliente não encontrado' });
+    }
+
+    const [comandas] = await db.query(
+      `SELECT c.id, c.mesa, c.status, c.tipo_venda, c.valor_total, c.data_abertura, c.data_fechamento
+       FROM comandas c
+       WHERE c.cliente_id = ? AND c.deleted_at IS NULL
+       ORDER BY c.data_abertura DESC`,
+      [id]
+    );
+
+    const fiadoAberto = comandas.filter(c => c.tipo_venda === 'fiado' && c.status === 'aberta');
+    const totalFiado = fiadoAberto.reduce((sum, c) => sum + Number(c.valor_total), 0);
+
+    res.json({
+      success: true,
+      data: {
+        cliente: clientes[0],
+        comandas,
+        fiado: {
+          quantidade: fiadoAberto.length,
+          total: totalFiado,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao buscar histórico:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar histórico do cliente' });
+  }
+};
+
 module.exports = exports;

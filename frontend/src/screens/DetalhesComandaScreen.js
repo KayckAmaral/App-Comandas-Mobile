@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Share,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/api';
@@ -130,6 +131,35 @@ export default function DetalhesComandaScreen({ route, navigation }) {
         },
       ]
     );
+  }
+
+  async function compartilharComprovante() {
+    const dataFormatada = formatDate(comanda.data_abertura);
+    const itensTexto = comanda.itens
+      .map((i) => `  • ${i.produto_nome} x${i.quantidade}   R$ ${Number(i.subtotal).toFixed(2)}`)
+      .join('\n');
+
+    const linhas = [
+      '🍽️  FastComanda',
+      '─────────────────────────',
+      `Comanda: #${comanda.id}${comanda.mesa ? ` • ${comanda.mesa}` : ''}`,
+      `Data: ${dataFormatada}`,
+      comanda.cliente_nome ? `Cliente: ${comanda.cliente_nome}` : null,
+      `Atendente: ${comanda.usuario_nome}`,
+      '─────────────────────────',
+      'ITENS:',
+      itensTexto,
+      '─────────────────────────',
+      `TOTAL: R$ ${Number(comanda.valor_total).toFixed(2)}`,
+      `Pagamento: ${comanda.tipo_venda === 'vista' ? 'À Vista' : 'Fiado'}`,
+      comanda.observacoes ? `Obs: ${comanda.observacoes}` : null,
+    ].filter(Boolean).join('\n');
+
+    try {
+      await Share.share({ message: linhas });
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+    }
   }
 
   function getStatusColor(status) {
@@ -309,6 +339,13 @@ export default function DetalhesComandaScreen({ route, navigation }) {
             )}
           </TouchableOpacity>
         </>
+      )}
+
+      {/* Compartilhar comprovante — só para comandas fechadas */}
+      {comanda.status === 'fechada' && (
+        <TouchableOpacity style={styles.compartilharButton} onPress={compartilharComprovante}>
+          <Text style={styles.compartilharButtonText}>📤 Compartilhar Comprovante</Text>
+        </TouchableOpacity>
       )}
 
       {/* Apagar (soft delete) — só para comandas fechadas ou canceladas */}
@@ -512,6 +549,19 @@ const styles = StyleSheet.create({
   cancelarButtonText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  compartilharButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  compartilharButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   apagarButton: {
