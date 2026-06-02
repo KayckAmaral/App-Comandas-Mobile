@@ -44,6 +44,7 @@ const authMiddleware = (req, res, next) => {
       // Adicionar informações do usuário na requisição
       req.userId = decoded.id;
       req.userEmail = decoded.email;
+      req.userRole = decoded.role;
       
       return next();
     });

@@ -17,6 +17,7 @@ import EditarComandaScreen from '../screens/EditarComandaScreen';
 import EstoqueScreen from '../screens/EstoqueScreen';
 import ClientesScreen from '../screens/ClientesScreen';
 import DetalhesClienteScreen from '../screens/DetalhesClienteScreen';
+import RelatoriosScreen from '../screens/RelatoriosScreen';
 
 const Stack = createStackNavigator();
 const Tab = createMaterialTopTabNavigator();
@@ -203,26 +204,33 @@ function ClientesStack() {
 }
 
 // Tab Navigator Principal (após login) — material-top-tabs no rodapé
-// dá swipe horizontal entre as 3 abas em qualquer ponto da tela.
+// dá swipe horizontal entre as abas em qualquer ponto da tela.
 function AppTabs() {
+  const { user } = useAuth();
+  // Fallback para gerente caso token antigo não tenha role
+  const isGerente = !user?.role || user?.role === 'gerente';
+
   return (
     <Tab.Navigator
       tabBarPosition="bottom"
       tabBar={(props) => <CustomTabBar {...props} />}
+      initialRouteName={isGerente ? 'Dashboard' : 'Comandas'}
       screenOptions={{
         swipeEnabled: true,
         animationEnabled: true,
         lazy: false,
       }}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          title: 'Início',
-          tabBarIcon: ({ size }) => <TabIcon name="🏠" size={size} />,
-        }}
-      />
+      {isGerente && (
+        <Tab.Screen
+          name="Dashboard"
+          component={DashboardScreen}
+          options={{
+            title: 'Início',
+            tabBarIcon: ({ size }) => <TabIcon name="🏠" size={size} />,
+          }}
+        />
+      )}
       <Tab.Screen
         name="Comandas"
         component={ComandasStack}
@@ -247,6 +255,16 @@ function AppTabs() {
           tabBarIcon: ({ size }) => <TabIcon name="📦" size={size} />,
         }}
       />
+      {isGerente && (
+        <Tab.Screen
+          name="Relatorios"
+          component={RelatoriosScreen}
+          options={{
+            title: 'Relatórios',
+            tabBarIcon: ({ size }) => <TabIcon name="📊" size={size} />,
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }

@@ -17,9 +17,12 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function EstoqueScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const isGerente = !user?.role || user?.role === 'gerente';
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -300,23 +303,25 @@ export default function EstoqueScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  style={[
-                    styles.toggleAtivoButton,
-                    produtoSelecionado.ativo ? styles.desativarButton : styles.reativarButton,
-                    desativando && styles.buttonDisabled,
-                  ]}
-                  onPress={toggleAtivo}
-                  disabled={atualizando || desativando}
-                >
-                  {desativando ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.toggleAtivoText}>
-                      {produtoSelecionado.ativo ? 'Desativar Produto' : 'Reativar Produto'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                {isGerente && (
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleAtivoButton,
+                      produtoSelecionado.ativo ? styles.desativarButton : styles.reativarButton,
+                      desativando && styles.buttonDisabled,
+                    ]}
+                    onPress={toggleAtivo}
+                    disabled={atualizando || desativando}
+                  >
+                    {desativando ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.toggleAtivoText}>
+                        {produtoSelecionado.ativo ? 'Desativar Produto' : 'Reativar Produto'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </>
             )}
           </View>

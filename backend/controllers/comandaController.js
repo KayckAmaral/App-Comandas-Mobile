@@ -663,6 +663,64 @@ exports.estatisticasDia = async (req, res) => {
   }
 };
 
+// Relatório por período
+exports.relatorios = async (req, res) => {
+  try {
+    const { data_inicio, data_fim } = req.query;
+
+    if (!data_inicio || !data_fim) {
+      return res.status(400).json({ success: false, message: 'data_inicio e data_fim são obrigatórios' });
+    }
+
+    const [resumo] = await db.query(
+      `SELECT
+        COUNT(*) as total_fechadas,
+        COALESCE(SUM(valor_total), 0) as faturamento,
+        COALESCE(AVG(valor_total), 0) as ticket_medio
+       FROM comandas
+       WHERE DATE(data_abertura) BETWEEN ? AND ?
+         AND status = 'fechada' AND deleted_at IS NULL`,
+      [data_inicio, data_fim]
+    );
+
+    const [porStatus] = await db.query(
+      `SELECT status, COUNT(*) as total
+       FROM comandas
+       WHERE DATE(data_abertura) BETWEEN ? AND ? AND deleted_at IS NULL
+       GROUP BY status`,
+      [data_inicio, data_fim]
+    );
+
+    const [topProdutos] = await db.query(
+      `SELECT p.nome,
+        SUM(ci.quantidade) as total_vendido,
+        SUM(ci.subtotal) as receita
+       FROM comandas_itens ci
+       JOIN comandas c ON ci.comanda_id = c.id
+       JOIN produtos p ON ci.produto_id = p.id
+       WHERE DATE(c.data_abertura) BETWEEN ? AND ?
+         AND c.status = 'fechada' AND c.deleted_at IS NULL
+       GROUP BY p.id, p.nome
+       ORDER BY total_vendido DESC
+       LIMIT 10`,
+      [data_inicio, data_fim]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        periodo: { inicio: data_inicio, fim: data_fim },
+        resumo: resumo[0],
+        por_status: porStatus,
+        top_produtos: topProdutos,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    res.status(500).json({ success: false, message: 'Erro ao gerar relatório' });
+  }
+};
+
 // Cancelar comanda aberta (devolve itens ao estoque)
 exports.cancelarComanda = async (req, res) => {
   const connection = await db.getConnection();

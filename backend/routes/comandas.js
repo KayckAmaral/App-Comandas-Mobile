@@ -12,6 +12,9 @@ router.get('/', comandaController.listarComandas);
 // GET /api/comandas/dashboard - Estatísticas do dia
 router.get('/dashboard', comandaController.estatisticasDia);
 
+// GET /api/comandas/relatorios - Relatório por período (apenas gerente)
+router.get('/relatorios', comandaController.relatorios);
+
 // GET /api/comandas/:id - Buscar comanda por ID
 router.get('/:id', comandaController.buscarComanda);
 

@@ -42,7 +42,7 @@ exports.register = async (req, res) => {
 
     // Gerar token
     const token = jwt.sign(
-      { id: result.insertId, email },
+      { id: result.insertId, email, role: 'gerente' },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -54,6 +54,7 @@ exports.register = async (req, res) => {
         id: result.insertId,
         nome,
         email,
+        role: 'gerente',
         token
       }
     });
@@ -116,7 +117,7 @@ exports.login = async (req, res) => {
 
     // Gerar token
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -128,6 +129,7 @@ exports.login = async (req, res) => {
         id: user.id,
         nome: user.nome,
         email: user.email,
+        role: user.role,
         token
       }
     });
@@ -145,7 +147,7 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, nome, email, created_at FROM usuarios WHERE id = ?',
+      'SELECT id, nome, email, role, created_at FROM usuarios WHERE id = ?',
       [req.userId]
     );
 
