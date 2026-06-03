@@ -1,63 +1,52 @@
-# 🍽️ FastComanda
+# FastComanda
 
-App mobile para gerenciamento de comandas em restaurantes e lanchonetes — substitui anotação em papel por um fluxo digital com controle de estoque em tempo real.
+App mobile para gerenciamento de comandas em restaurantes — substitui anotações em papel por um fluxo digital com controle de estoque.
 
 ## Stack
 
-- **Frontend mobile**: React Native + Expo (SDK 54)
+- **Frontend**: React Native + Expo (SDK 54)
 - **Backend**: Node.js + Express
 - **Banco**: MySQL
-- **Autenticação**: JWT + bcrypt
+- **Auth**: JWT + bcrypt
 
 ## Funcionalidades
 
-- **Login e cadastro** de usuários (atendentes).
-- **Comandas**: criar, listar, ver detalhes, editar (cliente, itens, quantidades, observações), finalizar.
-- **Estoque**: lista de produtos com indicador visual (OK / baixo / sem estoque) e atualização rápida da quantidade.
-- **Dashboard**: total de comandas, faturamento e produtos mais vendidos do dia.
-- **Navegação por swipe**: arrastar lateralmente em qualquer ponto da tela alterna entre Início, Comandas e Estoque (além dos ícones do menu inferior).
-- Layout responsivo para iPhone (notch + barra de gestos) e Android, com tema vermelho pastel.
+- Login e cadastro de atendentes
+- Criar, editar e finalizar comandas (vista/fiado)
+- Cadastro e histórico de clientes
+- Controle de estoque com indicador visual
+- Dashboard com faturamento e produtos mais vendidos
+- Relatórios
 
 ## Estrutura
 
 ```
 fastcomanda/
-├── backend/      API REST (Node + Express + MySQL)
-└── frontend/     App Expo (React Native)
+├── backend/    API REST (Express + MySQL)
+└── frontend/   App Expo (React Native)
 ```
 
-## Como rodar localmente
+## Como rodar
 
-### 1. Banco de dados
+**1. Banco de dados** — suba o MySQL e execute `backend/schema.sql`.
 
-Subir o MySQL local (XAMPP, MySQL Server, etc) e rodar `backend/schema.sql` para criar o schema `fastcomanda` com as tabelas e dados iniciais.
-
-### 2. Backend
-
-```powershell
+**2. Backend:**
+```bash
 cd backend
-copy .env.example .env       # ajustar credenciais do MySQL
+cp .env.example .env   # preencher DB_PASSWORD e JWT_SECRET
 npm install
-npm start
+npm run dev
 ```
 
-Servidor sobe na porta 3000 e imprime o IP da rede local (necessário para o app no celular físico).
-
-### 3. Frontend
-
-```powershell
+**3. Frontend:**
+```bash
 cd frontend
 npm install
 npx expo start
 ```
 
-- **iPhone (Expo Go)**: PC e celular na mesma rede WiFi → escanear o QR.
-- **Android Studio**: tecla `a` no terminal do Expo.
-
-A URL da API é detectada automaticamente a partir do host do Expo — não precisa editar nada.
-
-> Em ambos os casos, libere a porta **3000** no firewall do Windows para o celular conseguir acessar o backend.
+Escaneie o QR com o Expo Go (mesma rede Wi-Fi) ou pressione `a` para Android Studio. A URL da API é detectada automaticamente — não é necessário editar nada. Libere a porta **3000** no firewall.
 
 ## Autor
 
-Kayck Moreira Amaral — projeto da disciplina de Desenvolvimento Mobile.
+Kayck Moreira Amaral — Desenvolvimento Mobile · UNOESTE
